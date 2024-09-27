@@ -11,9 +11,14 @@ app.config['SECRET_KEY'] = 'hard to guess string'
 bootstrap = Bootstrap(app)
 moment = Moment(app)
 
+def validate_utoronto_email(form, input):
+    if "@" not in input.data or "utoronto" not in input.data:
+        flash('Email must contain "@" and "utoronto".')
+        raise ValidationError()
 
 class NameForm(FlaskForm):
     name = StringField('What is your name?', validators=[DataRequired()])
+    email = StringField('What is your email?', validators=[DataRequired()])
     submit = SubmitField('Submit')
 
 
@@ -32,8 +37,20 @@ def index():
     form = NameForm()
     if form.validate_on_submit():
         old_name = session.get('name')
-        if old_name is not None and old_name != form.name.data:
-            flash('Looks like you have changed your name!')
         session['name'] = form.name.data
+        old_email = session.get('email')
+
+        if "@" not in form.email.data and "utoronto" not in form.email.data:
+            flash('Email must contain "@" and "utoronto".' + form.email.data + ' is missing "@" and "utoronto"')
+        elif "@" not in form.email.data:
+            flash('Email must contain "@".' + form.email.data + ' is missing "@"')
+        elif "utoronto" not in form.email.data:
+            flash('Email must contain "utoronto".' + form.email.data + ' is missing "utoronto"')
+        else:
+            if old_name is not None and old_name != form.name.data:
+                flash('Looks like you have changed your name!')
+            if old_email is not None and old_email != form.email.data:
+                flash('Looks like you have changed your email!')
+        session['email'] = form.email.data
         return redirect(url_for('index'))
-    return render_template('index.html', form=form, name=session.get('name'))
+    return render_template('index.html', form=form, name=session.get('name'), email=session.get('email'))
